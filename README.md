@@ -1,22 +1,41 @@
 # POPIA SecureCheck
 
-A free security self-audit for South African small businesses. You answer plain-language questions in your browser, get a score against POPIA's eight conditions for lawful processing, and leave with a prioritised list of fixes. The page is static. It can be hosted on GitHub Pages at no cost.
+POPIA SecureCheck is a free, static self-audit for a South African small business. You answer plain-language questions in the browser and get a weighted score against the eight conditions for lawful processing, plus a prioritised list of fixes. If you own a domain or the owner has authorised you to assess it, a separate read-only checker can look at HTTPS, a few security headers, email authentication, four common admin addresses, and whether the homepage links to a privacy, POPIA, or PAIA page. The page never contacts the domain. You run the checker yourself and load the JSON report, or you load the fictional sample and demo the report with no scan at all.
 
-**Not legal advice and not a POPIA compliance certification.** SecureCheck does not measure every duty in the Protection of Personal Information Act 4 of 2013, it does not know facts you do not enter, and a high score does not mean the Information Regulator would agree. Use the [Information Regulator's](https://inforegulator.org.za/) guidance, or ask a qualified professional, before you rely on a result. This project is not published by the Regulator.
+> **Not legal advice and not a POPIA compliance certification.** SecureCheck does not measure every duty in the Protection of Personal Information Act 4 of 2013. It does not know facts you do not enter. A high score, and a tidy domain report, do not mean the Information Regulator would agree. Use the [Information Regulator's](https://inforegulator.org.za/) guidance, or ask a qualified professional, before you rely on a result. This project is not published by the Regulator.
 
-## What you can do in this version
+## What a result looks like
 
-- Answer 27 yes / partly / no questions mapped to the eight conditions in section 4 of the Act.
-- See an overall score, a score for each condition, and a prioritised list of plain-language fixes.
-- Keep the calculation on your own device. Nothing is uploaded.
-- Optionally remember answers in this browser's `localStorage`, and clear them with **Clear saved answers**.
-- Download the results as Markdown, or print them.
-- Confirm, with a checkbox, that you own the business or are authorised to assess it. Domain checks stay closed until that box is ticked, and the checker itself will not run without the same confirmation.
-- Run read-only checks against a domain you own or are authorised to test, then load the JSON report into the page. The page does not contact the domain.
+Illustration of the two result areas. The percentages are a sketch of the checklist, not a live score. The domain rows match [`examples/sample-securecheck-report.json`](examples/sample-securecheck-report.json).
 
-There is no backend, no Google Cloud project, no Gemini or other paid API, and no build step. The domain checker uses the Python 3 standard library only.
+```text
+POPIA SecureCheck
+Not legal advice. Not a POPIA compliance certification.
 
-## Run it locally
+Checklist
+  Overall score                         62%
+  Partial: important gaps remain
+  Accountability                        80%  ████████░░
+  Security safeguards                   45%  ████░░░░░░
+  Prioritised fixes
+  1. Gap · No written breach-notification step
+  2. Partial · Backups exist, restores untested
+
+Domain report · example-smme.co.za (fictional sample)
+  In place       HTTPS and TLS
+                 Certificate valid, TLS 1.3
+  Needs a look   Security headers
+                 Content-Security-Policy and Permissions-Policy missing
+  Not found      Privacy, POPIA, or PAIA link
+  Needs a look   SPF, DMARC, and DKIM
+                 SPF soft-fail, DMARC p=none, no common DKIM selector
+  Needs a look   Exposed-admin hint
+                 /wp-admin answered 200, /login answered 302
+```
+
+## Quick start
+
+### Local site
 
 From the `site` folder:
 
@@ -27,51 +46,38 @@ python3 -m http.server 8000
 
 Open <http://127.0.0.1:8000>. Serve the folder over HTTP. Opening `index.html` as a file will not load the questionnaire, because the page uses ES modules.
 
-## Check a domain locally (including WSL)
+### Demo without scanning a real site
 
-Run this from the repository folder, the one that contains the `securecheck` package. In Ubuntu on WSL that is the same command as on any other Linux terminal. Python 3 is enough. There is no `pip install`.
+1. Tick **I confirm that I own this business, or that the owner has authorised me to assess its systems and domain names**.
+2. Press **Load sample report**.
+
+The page fills with the committed file [`examples/sample-securecheck-report.json`](examples/sample-securecheck-report.json). The domain `example-smme.co.za` is fictional. No domain was contacted to create that file, and loading it does not scan a website. You can also choose that file, or paste it, and press **Show report**. The ownership tick is still required. The tick does not prove ownership.
+
+A three-minute interview walkthrough is in [DEMO.md](DEMO.md).
+
+### Check a domain you are authorised to assess
+
+From the repository folder (the one that contains the `securecheck` package). Python 3 is enough. There is no `pip install`. The same command works in Ubuntu on WSL.
 
 ```bash
-cd /path/to/popia-securecheck
-python3 -m securecheck your-domain.co.za --confirm-authorised
+python3 -m securecheck domain --confirm-authorised
 ```
 
-Pass `--confirm-authorised` only if you own that domain or the owner has authorised you to assess it. The flag does not prove ownership. Without it, the command stops before it contacts the domain.
+Replace `domain` with a name you own or are authorised to check, for example `your-domain.co.za`. Pass `--confirm-authorised` only in that case. The flag does not prove ownership. Without it, the command stops before it contacts the domain.
 
-The command writes `securecheck-report.json` in the current directory. It is gitignored. Then:
+The command writes `securecheck-report.json` in the current directory. That filename is gitignored. Then:
 
-1. Start the site with `python3 -m http.server` from the `site` folder, as above.
+1. Start the site as above.
 2. Tick the ownership confirmation.
 3. Choose `securecheck-report.json`, or paste it, and press **Show report**.
 
-Use `-o -` to print the JSON to the terminal instead of a file. `python3 -m securecheck --help` lists the options.
-
-The checker is passive:
-
-- HTTPS on port 443 only: is a certificate present, is it unexpired, does the name match, and which TLS version and cipher were negotiated.
-- Security headers on the homepage response: HSTS, Content-Security-Policy, X-Content-Type-Options, X-Frame-Options or CSP `frame-ancestors`, Referrer-Policy, and Permissions-Policy.
-- SPF and DMARC TXT records, plus DKIM at a short fixed list of common selectors. DNS uses DNS-over-HTTPS to Cloudflare, then Quad9 if Cloudflare does not answer.
-- HEAD requests, and only HEAD, to `/admin`, `/wp-admin`, `/administrator`, and `/login`. The report contains status codes. It does not follow those redirects or try to sign in.
-- Whether the homepage HTML contains a link whose address or text contains privacy, popia, or paia.
-
-It does not scan ports, run nmap, try passwords, crawl the site, query Have I Been Pwned, or call a paid API. A missing header or a missing DNS record is a gap in this check. It is not a finding by the Information Regulator, and it is not a POPIA compliance certification.
-
-On the page, each result is written in plain language. Where a result honestly relates to a POPIA duty, the card says so: TLS, headers, email authentication, and the admin hint sit near section 19 (security safeguards). A privacy or PAIA link sits near sections 17 and 18 (openness), not section 19. The Act does not name TLS versions, header names, SPF, DKIM, or DMARC.
-
-## Run the same check in GitHub Actions
-
-[`.github/workflows/domain-check.yml`](.github/workflows/domain-check.yml) runs the same `python3 -m securecheck` command. It does not run on push. You start it by hand:
-
-1. Open **Actions → Domain check → Run workflow**.
-2. Enter the domain.
-3. Tick **I own this domain or I am authorised to check it**. Leave it unticked and the job stops before any check.
-4. Download the `securecheck-report` artifact and load that JSON on the site.
-
-GitHub's runner sees the public HTTPS and DNS view of the domain. A name that only resolves inside your WSL network will not check the same way there. Use the local command for that.
+Use `-o -` to print the JSON instead of writing a file. `python3 -m securecheck --help` lists the options.
 
 ## Enable GitHub Pages
 
 The site is the `site` directory. [`.github/workflows/pages.yml`](.github/workflows/pages.yml) publishes that directory with GitHub Actions. It runs when changes land on `main`.
+
+Pages source: **GitHub Actions**, publishing the `site` folder (not the repository root).
 
 1. Merge this project to the `main` branch.
 2. In the repository, open **Settings → Pages**.
@@ -79,7 +85,42 @@ The site is the `site` directory. [`.github/workflows/pages.yml`](.github/workfl
 4. Push to `main`, or run the **Deploy GitHub Pages** workflow by hand.
 5. The site is published at `https://<user>.github.io/<repository>/`. For this repository that is <https://lawrence-flash.github.io/popia-securecheck/>.
 
-Paths are relative, so the same files work at the project-site subpath and on a local server. The first deployment can take a minute. GitHub may ask you to approve the `github-pages` environment once.
+Paths are relative, so the same files work at the project-site subpath and on a local server. The first deployment can take a minute. GitHub may ask you to approve the `github-pages` environment once. The sample report is embedded in the page, so **Load sample report** works on Pages without publishing the `examples` folder.
+
+## Run the domain check in GitHub Actions
+
+[`.github/workflows/domain-check.yml`](.github/workflows/domain-check.yml) runs the same `python3 -m securecheck` command. It does not run on push. You start it by hand:
+
+1. Open **Actions → Domain check → Run workflow**.
+2. Enter the domain.
+3. Tick **I own this domain or I am authorised to check it**. Leave it unticked and the job stops before any check.
+4. Download the `securecheck-report` artifact and load that JSON on the site with **Show report**.
+
+GitHub's runner sees the public HTTPS and DNS view of the domain. A name that only resolves on your own network will not check the same way there. Use the local command for that.
+
+## What you can do in this version
+
+- Answer 27 yes / partly / no questions mapped to the eight conditions in section 4 of the Act.
+- See an overall score, a score for each condition, and a prioritised list of plain-language fixes.
+- Keep the calculation on your own device. Nothing is uploaded.
+- Optionally remember answers in this browser's `localStorage`, and clear them with **Clear saved answers**.
+- Download the results as Markdown, or print them. A loaded domain report is included in the Markdown.
+- Confirm, with a checkbox, that you own the business or are authorised to assess it. Domain checks stay closed until that box is ticked, and the checker itself will not run without `--confirm-authorised`.
+- Load the fictional sample, or a JSON report you produced, and read each check in plain language.
+
+There is no backend, no Google Cloud project, no Gemini or other paid API, and no build step. The domain checker uses the Python 3 standard library only.
+
+The checker is passive:
+
+- HTTPS on port 443 only: is a certificate present, is it unexpired, does the name match, and which TLS version and cipher were negotiated.
+- Security headers on the homepage response: HSTS, Content-Security-Policy, X-Content-Type-Options, X-Frame-Options or CSP `frame-ancestors`, Referrer-Policy, and Permissions-Policy.
+- SPF and DMARC TXT records, plus DKIM at a short fixed list of common selectors. DNS uses DNS-over-HTTPS to Cloudflare, then Quad9 if Cloudflare does not answer.
+- HEAD requests, and only HEAD, to `/admin`, `/wp-admin`, `/administrator`, and `/login`. The report contains status codes. It does not follow those redirects or try to sign in.
+- Whether the homepage HTML contains a link whose address or text contains privacy, popia, or paia. A missing privacy policy link is a gap in that homepage check. It does not prove the notice is absent everywhere.
+
+It does not scan ports, run nmap, try passwords, crawl the site, query Have I Been Pwned, or call a paid API. A missing header or a missing DNS record is a gap in this check. It is not a finding by the Information Regulator, and it is not a POPIA compliance certification.
+
+On the page, each result is written in plain language. Where a result honestly relates to a POPIA duty, the card says so: TLS, headers, email authentication, and the admin hint sit near section 19 (security safeguards). A privacy or PAIA link sits near sections 17 and 18 (openness). The Act does not name TLS versions, header names, SPF, DKIM, or DMARC.
 
 ## How scoring works
 
@@ -96,7 +137,7 @@ Security-safeguard questions (sections 19 to 22) carry more weight than the othe
 | 40–69 | Partial: important gaps remain |
 | 0–39 | Needs urgent attention |
 
-Fixes are sorted by weight, highest first. A **No** ranks above a **Partly** of the same weight. A high score is still not a certificate.
+Fixes are sorted by weight, highest first. A **No** ranks above a **Partly** of the same weight. A high score is still not a certificate. Domain checks are not added into this score.
 
 ## What the questions follow
 
@@ -117,6 +158,28 @@ Section 19 requires appropriate, reasonable technical and organisational measure
 
 The consolidated Act text is available from [SAFLII](https://www.saflii.org/za/legis/consol_act/popia4o2013399/). Section numbers in the tool are limited to the duty the question is about.
 
+## Scope and limitations
+
+- The checklist is a self-audit of 27 questions. It is not the whole Act, and it is not legal advice.
+- The score is a weighted reading of answers you typed. Unanswered questions are excluded until you answer them.
+- Domain results are separate observations. They do not become a POPIA percentage.
+- The checker uses port 443 only, plus public DNS-over-HTTPS. It does not scan other ports.
+- DKIM is looked up only at a short fixed list of common selectors. A selector outside that list can still exist.
+- The privacy check reads homepage HTML only. It does not run JavaScript and does not open the linked page.
+- Admin hints are HEAD requests to four paths. A response is a prompt to review who can open that address. Many businesses publish those paths on purpose. The check does not try to sign in.
+- A name that resolves only inside a private network will not look the same from GitHub Actions.
+- The confirmation checkbox and `--confirm-authorised` do not prove ownership.
+- Answers and reports can describe real weaknesses. The Markdown download stays on your machine unless you move it.
+
+## What's next
+
+Small, still-free improvements that help an owner use the result:
+
+- A one-page print summary to hand to the person who looks after the website.
+- Plainer wording on the questions owners most often leave blank.
+
+Later work stays read-only, on a domain the operator is authorised to assess, with no paid API and no compliance certificate.
+
 ## Tests
 
 Scoring is plain JavaScript in [`site/js/score.js`](site/js/score.js), shared by the page and the tests. No packages are installed.
@@ -128,16 +191,25 @@ python3 -m unittest discover -s test -p 'test_*.py'
 
 `npm test` runs both. Node.js 20 or newer is required for the questionnaire tests. The domain-check tests use Python 3 and mocked sockets and responses, so they do not contact a domain. [`.github/workflows/test.yml`](.github/workflows/test.yml) runs both on push and on pull requests.
 
-## Roadmap
+## Repository settings
 
-- **PR #2 — read-only domain checks.** HTTPS/TLS, security headers, SPF, DKIM and DMARC, an exposed-admin hint, and whether a privacy policy link appears on the homepage. The ownership confirmation on the page, and `--confirm-authorised` on the command, both have to be given before a check is shown or run.
-- **PR #3 — polish.** Sharper wording, reporting, and small-business usability now that the checks exist.
+Suggested description:
+
+> Free POPIA security self-audit and read-only domain checks for South African small businesses. Not legal advice.
+
+Suggested topics:
+
+popia, cybersecurity, south-africa, smme, security-checklist
+
+Pages source is the `site` folder, deployed by GitHub Actions. In **Settings → Pages → Build and deployment**, set **Source** to **GitHub Actions**.
 
 ## Responsible use
 
 Use SecureCheck only for a business you own or are authorised to assess. The confirmation checkbox does not prove ownership, and neither does `--confirm-authorised`. Do not use the domain checker to probe someone else's systems.
 
 Answers can describe real weaknesses. The Markdown download stays on your machine unless you move it. Treat that file as sensitive. On a shared computer, use **Clear saved answers** before you leave. Untick **Remember my answers on this device** if you do not want them written to `localStorage`.
+
+The fictional sample is safe to commit and safe to load in a demo. A report from a real domain is not. Do not commit `securecheck-report.json`.
 
 ## Licence
 

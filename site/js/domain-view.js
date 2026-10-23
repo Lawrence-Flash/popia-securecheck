@@ -28,6 +28,9 @@ export function renderDomainReport(container, report) {
   const heading = el("h3", { id: "domain-report-title", tabindex: "-1" }, [`Results for ${report.domain}`]);
   fragment.append(heading);
   fragment.append(el("p", { class: "score-note" }, [report.disclaimer]));
+  if (report.sample_note) {
+    fragment.append(el("p", { class: "sample-banner" }, [report.sample_note]));
+  }
   if (report.generated_at) {
     fragment.append(el("p", { class: "score-note" }, [`Checked: ${report.generated_at}`]));
   }
