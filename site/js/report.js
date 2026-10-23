@@ -74,6 +74,7 @@ export function parseDomainReport(text) {
       domain: clip(data.domain.trim(), 253),
       generated_at: clip(typeof data.generated_at === "string" ? data.generated_at : "", 40),
       authorisation_note: clip(typeof data.authorisation_note === "string" ? data.authorisation_note : "", 500),
+      sample_note: clip(typeof data.sample_note === "string" ? data.sample_note : "", 500),
       limitations,
       checks,
     },
@@ -92,7 +93,9 @@ export function reportForDisplay(authorised, parsed) {
 
 export function domainReportMarkdown(report) {
   if (!report) return "";
-  const lines = ["## Domain checks", "", report.disclaimer, "", `Domain: ${report.domain}`, ""];
+  const lines = ["## Domain checks", "", report.disclaimer, ""];
+  if (report.sample_note) lines.push(report.sample_note, "");
+  lines.push(`Domain: ${report.domain}`, "");
   if (report.generated_at) lines.push(`Checked: ${report.generated_at}`, "");
   for (const check of report.checks) {
     lines.push(`### ${check.title}`, "", `${statusLabel(check.status)}. ${check.summary}`, "");

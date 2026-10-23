@@ -7,8 +7,10 @@
  */
 
 import { clearDomainReport, renderDomainReport } from "./domain-view.js";
+import { splitHttpsLinks } from "./links.js";
 import { CONDITIONS, QUESTIONS } from "./questions.js";
 import { domainReportMarkdown, parseDomainReport, reportForDisplay } from "./report.js";
+import { SAMPLE_REPORT } from "./sample-report.js";
 import { scoreAudit, toMarkdown } from "./score.js";
 
 const STORAGE_KEY = "popia-securecheck.v1";
@@ -29,6 +31,8 @@ const reportPaste = document.querySelector("#report-paste");
 const reportStatus = document.querySelector("#report-status");
 const domainResults = document.querySelector("#domain-results");
 const showReportButton = document.querySelector("#show-report");
+const loadSampleButton = document.querySelector("#load-sample");
+const sampleHint = document.querySelector("#sample-hint");
 const clearReportButton = document.querySelector("#clear-report");
 const saveStatus = document.querySelector("#save-status");
 const exportButton = document.querySelector("#export-markdown");
@@ -56,17 +60,13 @@ function el(tag, attrs = {}, children = []) {
 }
 
 function appendTextWithLinks(parent, text) {
-  const pattern = /https:\/\/[^\s),.;]+/g;
-  let last = 0;
-  for (const match of text.matchAll(pattern)) {
-    if (match.index > last) parent.append(text.slice(last, match.index));
-    const href = match[0];
-    parent.append(
-      el("a", { href, rel: "noopener noreferrer" }, [href]),
-    );
-    last = match.index + href.length;
+  for (const part of splitHttpsLinks(text)) {
+    if (part.kind === "link") {
+      parent.append(el("a", { href: part.value, rel: "noopener noreferrer" }, [part.value]));
+    } else {
+      parent.append(part.value);
+    }
   }
-  if (last < text.length) parent.append(text.slice(last));
 }
 
 function weightBadge(weight) {
@@ -144,6 +144,13 @@ function syncGate() {
     loadedReport = null;
     clearDomainReport(domainResults);
     if (reportStatus) reportStatus.textContent = "";
+    if (sampleHint) {
+      sampleHint.textContent = "Tick the confirmation before a domain report can be shown. The tick does not prove ownership.";
+    }
+    return;
+  }
+  if (sampleHint && !loadedReport) {
+    sampleHint.textContent = "Press Load sample report for the fictional example, or choose a JSON file you generated.";
   }
 }
 
@@ -160,25 +167,53 @@ function readChosenReport() {
   return Promise.resolve(reportPaste ? reportPaste.value : "");
 }
 
+function reportLoadedMessage(report) {
+  if (report.sample_note) return report.sample_note;
+  return `Showing the read-only report for ${report.domain}. This page did not contact that domain.`;
+}
+
+function showParsedReport(text) {
+  const gated = reportForDisplay(authorisationInput.checked === true, parseDomainReport(text));
+  if (!gated.ok) {
+    loadedReport = null;
+    clearDomainReport(domainResults);
+    reportStatus.textContent = gated.error;
+    if (sampleHint) sampleHint.textContent = gated.error;
+    return;
+  }
+  loadedReport = gated.report;
+  renderDomainReport(domainResults, gated.report);
+  reportStatus.textContent = reportLoadedMessage(gated.report);
+  if (sampleHint) {
+    sampleHint.textContent = gated.report.sample_note
+      ? "Sample report loaded below. This page did not contact the domain."
+      : "Report loaded below. This page did not contact the domain.";
+  }
+}
+
 function showReport() {
   readChosenReport()
-    .then((text) => {
-      const gated = reportForDisplay(authorisationInput.checked === true, parseDomainReport(text));
-      if (!gated.ok) {
-        loadedReport = null;
-        clearDomainReport(domainResults);
-        reportStatus.textContent = gated.error;
-        return;
-      }
-      loadedReport = gated.report;
-      renderDomainReport(domainResults, gated.report);
-      reportStatus.textContent = `Showing the read-only report for ${gated.report.domain}. This page did not contact that domain.`;
-    })
+    .then((text) => showParsedReport(text))
     .catch(() => {
       loadedReport = null;
       clearDomainReport(domainResults);
       reportStatus.textContent = "Could not read that file.";
+      if (sampleHint) sampleHint.textContent = "Could not read that file.";
     });
+}
+
+function loadSampleReport() {
+  if (authorisationInput.checked !== true) {
+    const message = "Tick the confirmation before a domain report can be shown. The tick does not prove ownership.";
+    if (sampleHint) sampleHint.textContent = message;
+    if (reportStatus) reportStatus.textContent = message;
+    authorisationInput.focus();
+    return;
+  }
+  if (reportFile) reportFile.value = "";
+  const text = JSON.stringify(SAMPLE_REPORT, null, 2);
+  if (reportPaste) reportPaste.value = text;
+  showParsedReport(text);
 }
 
 function clearReport() {
@@ -187,6 +222,11 @@ function clearReport() {
   if (reportFile) reportFile.value = "";
   clearDomainReport(domainResults);
   if (reportStatus) reportStatus.textContent = "Domain report cleared from this page. Nothing was sent to a server.";
+  if (sampleHint) {
+    sampleHint.textContent = authorisationInput.checked
+      ? "Domain report cleared from this page. Nothing was sent to a server."
+      : "Tick the confirmation before a domain report can be shown. The tick does not prove ownership.";
+  }
 }
 
 function answerLabel(answer) {
@@ -305,7 +345,7 @@ function renderResults() {
       el("p", { class: "act-ref" }, [condition.actRef]),
     );
     if (condition.percent === null) {
-      head.append(el("p", { class: "condition-percent" }, ["Not started"]));
+      head.append(el("p", { class: "condition-percent is-empty" }, ["Not started"]));
       item.append(head);
       item.append(el("p", { class: "score-note" }, [`0 of ${condition.total} answered.`]));
     } else {
@@ -448,6 +488,7 @@ function bindActions() {
     persist();
   });
   showReportButton.addEventListener("click", showReport);
+  if (loadSampleButton) loadSampleButton.addEventListener("click", loadSampleReport);
   clearReportButton.addEventListener("click", clearReport);
   exportButton.addEventListener("click", () => {
     let markdown = toMarkdown(currentResult(), {

@@ -63,26 +63,39 @@ describe("required copy", () => {
     assert.match(html, /id="report-file"/);
     assert.match(html, /id="report-paste"/);
     assert.match(html, /id="show-report"/);
+    assert.match(html, /id="load-sample"/);
+    assert.match(html, /Load sample report/);
+    assert.match(html, /example-smme\.co\.za/);
+    assert.match(html, /examples\/sample-securecheck-report\.json/);
+    assert.match(app, /loadSampleReport/);
+    assert.match(app, /splitHttpsLinks/);
     assert.match(html, /Clear saved answers/);
     assert.match(html, /Remember my answers on this device/);
     assert.match(html, /id="authorisation"/);
     assert.match(app, /reportForDisplay\(/);
   });
 
-  it("documents local use, Pages, the roadmap, and the MIT licence", () => {
+  it("documents local use, Pages, scope, and the MIT licence", () => {
     const readme = read("README.md");
     const licence = read("LICENSE");
     assert.match(readme, /python3 -m http\.server/);
+    assert.match(readme, /python3 -m securecheck domain --confirm-authorised/);
+    assert.match(readme, /examples\/sample-securecheck-report\.json/);
+    assert.match(readme, /Load sample report/);
     assert.match(readme, /GitHub Pages/);
     assert.match(readme, /GitHub Actions/);
+    assert.match(readme, /`site` folder/);
     assert.match(readme, /HTTPS\/TLS|HTTPS and TLS/);
     assert.match(readme, /security headers/);
     assert.match(readme, /SPF/);
     assert.match(readme, /DKIM/);
     assert.match(readme, /DMARC/);
     assert.match(readme, /privacy policy/i);
-    assert.match(readme, /PR #2/);
-    assert.match(readme, /PR #3/);
+    assert.match(readme, /What's next/);
+    assert.match(readme, /popia, cybersecurity, south-africa, smme, security-checklist/);
+    assert.doesNotMatch(readme, /PR #2/);
+    assert.doesNotMatch(readme, /PR #3/);
+    assert.doesNotMatch(readme, /coming in/i);
     assert.match(readme, /Not legal advice/);
     assert.match(readme, /not a POPIA compliance certification/i);
     assert.match(readme, /Information Regulator/);

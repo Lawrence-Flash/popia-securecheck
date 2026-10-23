@@ -182,13 +182,45 @@ main section {
   margin: 2rem 0;
 }
 
+.mast-disclaimer {
+  display: inline-block;
+  margin-top: 0.9rem;
+  padding: 0.45rem 0.75rem;
+  background: var(--amber-soft);
+  border: 2px solid var(--amber);
+  border-radius: 10px;
+  font-weight: 700;
+}
+
 .disclaimer {
-  background: var(--raised);
-  border: 1px solid var(--line);
-  border-left: 6px solid var(--amber);
+  background: var(--amber-soft);
+  border: 2px solid var(--amber);
+  border-left: 8px solid var(--amber);
   border-radius: 14px;
-  padding: 0.9rem 1rem;
+  padding: 1rem 1.05rem 1.05rem;
   box-shadow: var(--shadow);
+}
+
+.disclaimer h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.35rem;
+}
+
+.demo-path {
+  background: var(--green-soft);
+  border: 1px solid var(--green);
+  border-radius: 16px;
+  padding: 0.95rem 1rem 1rem;
+  margin-top: 1rem;
+}
+
+.demo-path ol {
+  margin: 0.5rem 0 0;
+  padding-left: 1.2rem;
+}
+
+.demo-path li + li {
+  margin-top: 0.35rem;
 }
 
 .how ol {
@@ -288,10 +320,10 @@ input[type="text"] {
 .kicker {
   margin: 0.15rem 0 0;
   color: var(--green-ink);
-  font-size: 0.82rem;
+  font-size: 0.85rem;
   font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-variant-caps: all-small-caps;
 }
 
 .condition-summary,
@@ -498,6 +530,14 @@ button {
   font-size: 1.6rem;
 }
 
+.condition-percent.is-empty {
+  align-self: center;
+  font-family: var(--sans);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
 .meter {
   height: 0.5rem;
   margin-top: 0.7rem;
@@ -572,6 +612,10 @@ button {
   background: var(--paper);
   border: 1px solid var(--line);
   border-radius: 10px;
+}
+
+.command code {
+  overflow-wrap: anywhere;
 }
 
 .report-loader {
@@ -663,6 +707,22 @@ input[type="file"] {
   font-size: 0.95rem;
 }
 
+.sample-banner {
+  margin-top: 0.7rem;
+  padding: 0.7rem 0.8rem;
+  background: var(--amber-soft);
+  border: 2px solid var(--amber);
+  border-radius: 12px;
+  font-weight: 700;
+}
+
+.check,
+.detail-list,
+.sample-banner,
+.fix-action {
+  overflow-wrap: anywhere;
+}
+
 .limitations {
   margin-top: 1rem;
 }
@@ -693,8 +753,62 @@ footer p + p {
 }
 
 @media (max-width: 36rem) {
+  .wrap {
+    width: min(46rem, calc(100% - 1.25rem));
+  }
+
+  .masthead {
+    padding-top: 1.1rem;
+  }
+
+  .eyebrow {
+    align-items: flex-start;
+  }
+
+  main section {
+    margin: 1.35rem 0;
+  }
+
   .choices {
     grid-template-columns: 1fr;
+  }
+
+  .condition-emphasis,
+  .demo-path,
+  .disclaimer {
+    padding-inline: 0.75rem;
+  }
+
+  fieldset.question {
+    padding: 0.75rem 0.7rem 0.85rem;
+  }
+
+  .condition-score-head {
+    grid-template-columns: 1fr;
+  }
+
+  .condition-percent {
+    grid-row: auto;
+    grid-column: 1;
+    margin-top: 0.2rem;
+    font-size: 1.35rem;
+  }
+
+  .actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .actions button {
+    width: 100%;
+  }
+
+  .gate-label label {
+    font-size: 0.98rem;
+  }
+
+  textarea {
+    min-height: 6.5rem;
   }
 }
 
