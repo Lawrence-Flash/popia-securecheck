@@ -4,7 +4,7 @@
   "type": "module",
   "description": "In-browser POPIA security self-audit for South African small businesses.",
   "scripts": {
-    "test": "node --test"
+    "test": "node --test && python3 -m unittest discover -s test -p 'test_*.py'"
   },
   "engines": {
     "node": ">=20"

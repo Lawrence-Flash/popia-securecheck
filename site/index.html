@@ -89,17 +89,35 @@
       <section id="domain-checks" aria-labelledby="domain-title">
         <div class="section-head">
           <h2 id="domain-title">Domain checks</h2>
-          <p>Later versions will run read-only checks only after this confirmation. This version does not look up a domain or open a connection.</p>
+          <p>Read-only checks for a domain you own or are authorised to test: HTTPS and TLS, security headers, SPF, DKIM and DMARC, a hint if a common admin address answers, and whether the homepage links to a privacy, POPIA, or PAIA page. Run the checker on your computer, then load the JSON report here. This page does not contact the domain, and the results are not a POPIA score.</p>
         </div>
         <div class="gate-card" id="gate-card">
           <div class="gate-label">
             <input id="authorisation" class="gate-input" type="checkbox" aria-controls="domain-open" aria-describedby="authorisation-note">
-            <label for="authorisation">I confirm that I own this business, or that the owner has authorised me to assess its systems and domain names. I will only use domain checks for names I am allowed to test. I understand that ticking this box does not prove ownership, and that this version of SecureCheck does not contact any website or server.</label>
+            <label for="authorisation">I confirm that I own this business, or that the owner has authorised me to assess its systems and domain names. I will only use domain checks for names I am allowed to test. I understand that ticking this box does not prove ownership. This page does not contact any website or server. The checker runs only on a computer where that confirmation is given again with --confirm-authorised.</label>
           </div>
-          <p id="authorisation-note" class="domain-locked">Tick the confirmation to open the domain-check area. Nothing is sent over the network.</p>
+          <p id="authorisation-note" class="domain-locked">Tick the confirmation to open the domain-check area. This page sends nothing over the network. The checker also refuses to run until you confirm authorisation on the command that starts it.</p>
           <div id="domain-open" class="domain-open">
-            <h3>Domain checks coming in PR #2</h3>
-            <p>Planned read-only checks: HTTPS and TLS, security headers, SPF, DKIM and DMARC, a hint if a common admin address is exposed, and whether a privacy policy appears to be present. Nothing in this version contacts a domain or a server.</p>
+            <h3>Load a report</h3>
+            <p>From the project folder, in WSL or any other terminal:</p>
+            <p class="command"><code>python3 -m securecheck your-domain.co.za --confirm-authorised</code></p>
+            <p>That writes <code>securecheck-report.json</code>. Choose the file, or paste it, then show the report. The same checker can run from GitHub Actions. The README explains both.</p>
+            <div class="report-loader no-print">
+              <div class="field">
+                <label for="report-file">JSON report file</label>
+                <input id="report-file" type="file" accept="application/json,.json">
+              </div>
+              <div class="field">
+                <label for="report-paste">Or paste the JSON</label>
+                <textarea id="report-paste" rows="8" spellcheck="false" autocomplete="off"></textarea>
+              </div>
+              <div class="actions">
+                <button type="button" id="show-report">Show report</button>
+                <button type="button" id="clear-report" class="button-quiet">Clear report</button>
+              </div>
+            </div>
+            <p id="report-status" class="save-status" role="status"></p>
+            <div id="domain-results"></div>
           </div>
         </div>
       </section>

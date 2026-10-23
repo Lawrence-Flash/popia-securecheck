@@ -1,0 +1,47 @@
+name: Domain check
+
+on:
+  workflow_dispatch:
+    inputs:
+      domain:
+        description: Domain you own or are authorised to check
+        required: true
+        type: string
+      confirm_authorised:
+        description: I own this domain or I am authorised to check it
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Read-only domain check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Require authorisation
+        env:
+          CONFIRM: ${{ inputs.confirm_authorised }}
+        run: |
+          if [ "$CONFIRM" != "true" ]; then
+            echo "Refusing to run. Tick the authorisation box only for a domain you own or are authorised to check."
+            exit 2
+          fi
+
+      - name: Run securecheck
+        env:
+          CHECK_DOMAIN: ${{ inputs.domain }}
+        run: python3 -m securecheck "$CHECK_DOMAIN" --confirm-authorised --output securecheck-report.json
+
+      - name: Upload JSON report
+        uses: actions/upload-artifact@v4
+        with:
+          name: securecheck-report
+          path: securecheck-report.json
+          if-no-files-found: error
