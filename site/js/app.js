@@ -2,10 +2,15 @@
  * POPIA SecureCheck browser UI.
  * Scoring stays in score.js. This file renders the form, stores answers
  * in localStorage only when the visitor asks it to, and builds the download.
- * PR #1 makes no network requests. Domain checks are a locked placeholder.
+ * Domain checks are a JSON report produced on the visitor's computer.
+ * This page does not contact the domain.
  */
 
+import { clearDomainReport, renderDomainReport } from "./domain-view.js";
+import { splitHttpsLinks } from "./links.js";
 import { CONDITIONS, QUESTIONS } from "./questions.js";
+import { domainReportMarkdown, parseDomainReport, reportForDisplay } from "./report.js";
+import { SAMPLE_REPORT } from "./sample-report.js";
 import { scoreAudit, toMarkdown } from "./score.js";
 
 const STORAGE_KEY = "popia-securecheck.v1";
@@ -20,6 +25,15 @@ const businessNameInput = document.querySelector("#business-name");
 const rememberInput = document.querySelector("#remember");
 const authorisationInput = document.querySelector("#authorisation");
 const gateCard = document.querySelector("#gate-card");
+const domainOpen = document.querySelector("#domain-open");
+const reportFile = document.querySelector("#report-file");
+const reportPaste = document.querySelector("#report-paste");
+const reportStatus = document.querySelector("#report-status");
+const domainResults = document.querySelector("#domain-results");
+const showReportButton = document.querySelector("#show-report");
+const loadSampleButton = document.querySelector("#load-sample");
+const sampleHint = document.querySelector("#sample-hint");
+const clearReportButton = document.querySelector("#clear-report");
 const saveStatus = document.querySelector("#save-status");
 const exportButton = document.querySelector("#export-markdown");
 const printButton = document.querySelector("#print-results");
@@ -27,6 +41,7 @@ const clearButton = document.querySelector("#clear-data");
 
 let remember = true;
 let announced = false;
+let loadedReport = null;
 
 function el(tag, attrs = {}, children = []) {
   const node = document.createElement(tag);
@@ -45,15 +60,13 @@ function el(tag, attrs = {}, children = []) {
 }
 
 function appendTextWithLinks(parent, text) {
-  const pattern = /https:\/\/[^\s)]+/g;
-  let last = 0;
-  for (const match of text.matchAll(pattern)) {
-    const href = match[0].replace(/[.,;:]+$/, "");
-    if (match.index > last) parent.append(text.slice(last, match.index));
-    parent.append(el("a", { href, rel: "noopener noreferrer" }, [href]));
-    last = match.index + href.length;
+  for (const part of splitHttpsLinks(text)) {
+    if (part.kind === "link") {
+      parent.append(el("a", { href: part.value, rel: "noopener noreferrer" }, [part.value]));
+    } else {
+      parent.append(part.value);
+    }
   }
-  if (last < text.length) parent.append(text.slice(last));
 }
 
 function weightBadge(weight) {
@@ -124,7 +137,96 @@ function syncChoiceStyles() {
 }
 
 function syncGate() {
-  gateCard.classList.toggle("is-open", authorisationInput.checked);
+  const open = authorisationInput.checked === true;
+  gateCard.classList.toggle("is-open", open);
+  if (domainOpen) domainOpen.inert = !open;
+  if (!open) {
+    loadedReport = null;
+    clearDomainReport(domainResults);
+    if (reportStatus) reportStatus.textContent = "";
+    if (sampleHint) {
+      sampleHint.textContent = "Tick the confirmation before a domain report can be shown. The tick does not prove ownership.";
+    }
+    return;
+  }
+  if (sampleHint && !loadedReport) {
+    sampleHint.textContent = "Press Load sample report for the fictional example, or choose a JSON file you generated.";
+  }
+}
+
+function readChosenReport() {
+  const file = reportFile && reportFile.files && reportFile.files[0];
+  if (file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ""));
+      reader.onerror = () => reject(new Error("read failed"));
+      reader.readAsText(file);
+    });
+  }
+  return Promise.resolve(reportPaste ? reportPaste.value : "");
+}
+
+function reportLoadedMessage(report) {
+  if (report.sample_note) return report.sample_note;
+  return `Showing the read-only report for ${report.domain}. This page did not contact that domain.`;
+}
+
+function showParsedReport(text) {
+  const gated = reportForDisplay(authorisationInput.checked === true, parseDomainReport(text));
+  if (!gated.ok) {
+    loadedReport = null;
+    clearDomainReport(domainResults);
+    reportStatus.textContent = gated.error;
+    if (sampleHint) sampleHint.textContent = gated.error;
+    return;
+  }
+  loadedReport = gated.report;
+  renderDomainReport(domainResults, gated.report);
+  reportStatus.textContent = reportLoadedMessage(gated.report);
+  if (sampleHint) {
+    sampleHint.textContent = gated.report.sample_note
+      ? "Sample report loaded below. This page did not contact the domain."
+      : "Report loaded below. This page did not contact the domain.";
+  }
+}
+
+function showReport() {
+  readChosenReport()
+    .then((text) => showParsedReport(text))
+    .catch(() => {
+      loadedReport = null;
+      clearDomainReport(domainResults);
+      reportStatus.textContent = "Could not read that file.";
+      if (sampleHint) sampleHint.textContent = "Could not read that file.";
+    });
+}
+
+function loadSampleReport() {
+  if (authorisationInput.checked !== true) {
+    const message = "Tick the confirmation before a domain report can be shown. The tick does not prove ownership.";
+    if (sampleHint) sampleHint.textContent = message;
+    if (reportStatus) reportStatus.textContent = message;
+    authorisationInput.focus();
+    return;
+  }
+  if (reportFile) reportFile.value = "";
+  const text = JSON.stringify(SAMPLE_REPORT, null, 2);
+  if (reportPaste) reportPaste.value = text;
+  showParsedReport(text);
+}
+
+function clearReport() {
+  loadedReport = null;
+  if (reportPaste) reportPaste.value = "";
+  if (reportFile) reportFile.value = "";
+  clearDomainReport(domainResults);
+  if (reportStatus) reportStatus.textContent = "Domain report cleared from this page. Nothing was sent to a server.";
+  if (sampleHint) {
+    sampleHint.textContent = authorisationInput.checked
+      ? "Domain report cleared from this page. Nothing was sent to a server."
+      : "Tick the confirmation before a domain report can be shown. The tick does not prove ownership.";
+  }
 }
 
 function answerLabel(answer) {
@@ -385,11 +487,15 @@ function bindActions() {
     syncGate();
     persist();
   });
+  showReportButton.addEventListener("click", showReport);
+  if (loadSampleButton) loadSampleButton.addEventListener("click", loadSampleReport);
+  clearReportButton.addEventListener("click", clearReport);
   exportButton.addEventListener("click", () => {
-    const markdown = toMarkdown(currentResult(), {
+    let markdown = toMarkdown(currentResult(), {
       businessName: businessNameInput.value,
       generatedAt: generatedAt(),
     });
+    if (loadedReport) markdown += `\n${domainReportMarkdown(loadedReport)}`;
     const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = el("a", { href: url, download: "popia-securecheck-results.md" });
@@ -410,9 +516,10 @@ function bindActions() {
     } catch {
       stored = null;
     }
-    if (hasAnswers || authorisationInput.checked || stored) {
+    const reportVisible = Boolean(loadedReport) || (reportPaste && reportPaste.value.trim() !== "");
+    if (hasAnswers || authorisationInput.checked || stored || reportVisible) {
       const confirmed = window.confirm(
-        "Clear the business name, answers, and authorisation tick stored in this browser?",
+        "Clear the business name, answers, authorisation tick, and any domain report shown in this browser?",
       );
       if (!confirmed) return;
     }
@@ -426,6 +533,7 @@ function bindActions() {
     businessNameInput.value = "";
     authorisationInput.checked = false;
     for (const input of document.querySelectorAll('#audit-form input[type="radio"]')) input.checked = false;
+    clearReport();
     syncChoiceStyles();
     syncGate();
     announced = true;

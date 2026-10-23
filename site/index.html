@@ -22,17 +22,20 @@
         </p>
         <h1>POPIA SecureCheck</h1>
         <p class="lede">A plain-language check of how your business looks after personal information. The questions follow the eight conditions for lawful processing in the Protection of Personal Information Act 4 of 2013, with extra weight on security safeguards (section 19) and breach notification (section 22).</p>
+        <p class="mast-disclaimer"><strong>Not legal advice and not a POPIA compliance certification.</strong></p>
         <nav aria-label="On this page">
           <a href="#questionnaire">Questionnaire</a>
           <a href="#results">Results</a>
           <a href="#domain-checks">Domain checks</a>
+          <a href="#demo-title">Sample report</a>
         </nav>
       </div>
     </header>
 
     <main class="wrap">
-      <section class="disclaimer" role="note" aria-label="Disclaimer">
-        <p><strong>Not legal advice and not a POPIA compliance certification.</strong> SecureCheck helps a small business see gaps in its own answers. It does not measure every duty in the Act, it does not know facts you do not tell it, and a high score does not mean the Information Regulator would agree. For official guidance, use the <a href="https://inforegulator.org.za/">Information Regulator</a> or a qualified professional. The Act is the Protection of Personal Information Act 4 of 2013.</p>
+      <section class="disclaimer" role="note" aria-labelledby="disclaimer-title">
+        <h2 id="disclaimer-title">Not legal advice</h2>
+        <p><strong>Not legal advice and not a POPIA compliance certification.</strong> SecureCheck helps a small business see gaps in its own answers, and in a few read-only observations about a domain it is authorised to check. It does not measure every duty in the Act, it does not know facts you do not tell it, and a high score does not mean the Information Regulator would agree. For official guidance, use the <a href="https://inforegulator.org.za/">Information Regulator</a> or a qualified professional. The Act is the Protection of Personal Information Act 4 of 2013.</p>
       </section>
 
       <section class="how" aria-labelledby="how-title">
@@ -40,6 +43,7 @@
         <ol>
           <li>Answer yes, partly, or no. Partly means you have started, but the practice is incomplete or not consistent. Partly scores half the question's weight.</li>
           <li>The score is calculated in this browser. Nothing is uploaded. Leave "Remember my answers on this device" ticked only if you want them kept in local storage.</li>
+          <li>For a domain report without scanning a site, open <a href="#domain-checks">Domain checks</a>, tick the confirmation, and press <strong>Load sample report</strong>. The sample domain is fictional.</li>
           <li>Download a Markdown file or print the results, then work through the fixes. Clear the saved answers when you are done on a shared computer.</li>
         </ol>
       </section>
@@ -89,23 +93,56 @@
       <section id="domain-checks" aria-labelledby="domain-title">
         <div class="section-head">
           <h2 id="domain-title">Domain checks</h2>
-          <p>Later versions will run read-only checks only after this confirmation. This version does not look up a domain or open a connection.</p>
+          <p>Read-only checks for a domain you own or are authorised to test: HTTPS and TLS, security headers, SPF, DKIM and DMARC, a hint if a common admin address answers, and whether the homepage links to a privacy, POPIA, or PAIA page. Run the checker on your computer, then load the JSON report here. This page does not contact the domain, and the results are not a POPIA score.</p>
+        </div>
+        <div class="demo-path no-print">
+          <h3 id="demo-title">Demo without scanning a site</h3>
+          <ol>
+            <li>Tick the confirmation below. The sample domain is fictional. This page still does not contact any website.</li>
+            <li>Press <strong>Load sample report</strong>. The button appears once the box is ticked.</li>
+            <li>Read the mixed results for <code>example-smme.co.za</code>: one check in place, one not found, and three that need a look.</li>
+          </ol>
+          <p>The same JSON is in the repository at <code>examples/sample-securecheck-report.json</code>. You can choose that file, or paste it, instead of using the button.</p>
         </div>
         <div class="gate-card" id="gate-card">
           <div class="gate-label">
             <input id="authorisation" class="gate-input" type="checkbox" aria-controls="domain-open" aria-describedby="authorisation-note">
-            <label for="authorisation">I confirm that I own this business, or that the owner has authorised me to assess its systems and domain names. I will only use domain checks for names I am allowed to test. I understand that ticking this box does not prove ownership, and that this version of SecureCheck does not contact any website or server.</label>
+            <label for="authorisation">I confirm that I own this business, or that the owner has authorised me to assess its systems and domain names. I will only use domain checks for names I am allowed to test. I understand that ticking this box does not prove ownership. This page does not contact any website or server. The checker runs only on a computer where that confirmation is given again with --confirm-authorised.</label>
           </div>
-          <p id="authorisation-note" class="domain-locked">Tick the confirmation to open the domain-check area. Nothing is sent over the network.</p>
+          <p id="authorisation-note" class="domain-locked">Tick the confirmation to load the sample report or your own JSON. This page sends nothing over the network. The checker also refuses to run until you confirm authorisation on the command that starts it.</p>
           <div id="domain-open" class="domain-open">
-            <h3>Domain checks coming in PR #2</h3>
-            <p>Planned read-only checks: HTTPS and TLS, security headers, SPF, DKIM and DMARC, a hint if a common admin address is exposed, and whether a privacy policy appears to be present. Nothing in this version contacts a domain or a server.</p>
+            <h3>Load a report</h3>
+            <p><strong>Load sample report</strong> shows the fictional file for <code>example-smme.co.za</code>. Nothing is contacted.</p>
+            <div class="actions no-print">
+              <button type="button" id="load-sample">Load sample report</button>
+            </div>
+            <p id="sample-hint" class="save-status" role="status"></p>
+            <p>To check a domain you are authorised to assess, from the project folder:</p>
+            <p class="command"><code>python3 -m securecheck domain --confirm-authorised</code></p>
+            <p>Replace <code>domain</code> with that name, for example <code>your-domain.co.za</code>. The command writes <code>securecheck-report.json</code>. Choose the file, or paste it, then press <strong>Show report</strong>. The same checker can run from GitHub Actions. The README explains both.</p>
+            <div class="report-loader no-print">
+              <div class="field">
+                <label for="report-file">JSON report file</label>
+                <input id="report-file" type="file" accept="application/json,.json">
+              </div>
+              <div class="field">
+                <label for="report-paste">Or paste the JSON</label>
+                <textarea id="report-paste" rows="6" spellcheck="false" autocomplete="off"></textarea>
+              </div>
+              <div class="actions">
+                <button type="button" id="show-report">Show report</button>
+                <button type="button" id="clear-report" class="button-quiet">Clear report</button>
+              </div>
+            </div>
+            <p id="report-status" class="save-status" role="status"></p>
+            <div id="domain-results"></div>
           </div>
         </div>
       </section>
     </main>
 
     <footer class="wrap">
+      <p><strong>Not legal advice and not a POPIA compliance certification.</strong> A score and a domain report are aids for a business you are authorised to assess. They are not a finding by the Information Regulator.</p>
       <p><strong>Responsible use.</strong> Use SecureCheck only for a business you own or are authorised to assess. Do not use the domain-check gate as a cover for testing someone else's systems. An exported results file can describe real weaknesses. Keep it private.</p>
       <p>POPIA SecureCheck is free software under the MIT licence. It stores nothing on a server. Questions cite sections of Act 4 of 2013 only for the duty they describe.</p>
       <p>

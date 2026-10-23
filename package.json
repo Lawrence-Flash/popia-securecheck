@@ -2,9 +2,9 @@
   "name": "popia-securecheck",
   "private": true,
   "type": "module",
-  "description": "In-browser POPIA security self-audit for South African small businesses.",
+  "description": "Free POPIA security self-audit and read-only domain checks for South African small businesses. Not legal advice.",
   "scripts": {
-    "test": "node --test"
+    "test": "node --test && python3 -m unittest discover -s test -p 'test_*.py'"
   },
   "engines": {
     "node": ">=20"
