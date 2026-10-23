@@ -1,5 +1,7 @@
 # POPIA SecureCheck
 
+**Live demo:** <https://lawrence-flash.github.io/popia-securecheck/>
+
 POPIA SecureCheck is a free, static self-audit for a South African small business. You answer plain-language questions in the browser and get a weighted score against the eight conditions for lawful processing, plus a prioritised list of fixes. If you own a domain or the owner has authorised you to assess it, a separate read-only checker can look at HTTPS, a few security headers, email authentication, four common admin addresses, and whether the homepage links to a privacy, POPIA, or PAIA page. The page never contacts the domain. You run the checker yourself and load the JSON report, or you load the fictional sample and demo the report with no scan at all.
 
 > **Not legal advice and not a POPIA compliance certification.** SecureCheck does not measure every duty in the Protection of Personal Information Act 4 of 2013. It does not know facts you do not enter. A high score, and a tidy domain report, do not mean the Information Regulator would agree. Use the [Information Regulator's](https://inforegulator.org.za/) guidance, or ask a qualified professional, before you rely on a result. This project is not published by the Regulator.
@@ -83,7 +85,7 @@ Pages source: **GitHub Actions**, publishing the `site` folder (not the reposito
 2. In the repository, open **Settings → Pages**.
 3. Under **Build and deployment**, set **Source** to **GitHub Actions**.
 4. Push to `main`, or run the **Deploy GitHub Pages** workflow by hand.
-5. The site is published at `https://<user>.github.io/<repository>/`. For this repository that is <https://lawrence-flash.github.io/popia-securecheck/>.
+5. The site is published at <https://lawrence-flash.github.io/popia-securecheck/>.
 
 Paths are relative, so the same files work at the project-site subpath and on a local server. The first deployment can take a minute. GitHub may ask you to approve the `github-pages` environment once. The sample report is embedded in the page, so **Load sample report** works on Pages without publishing the `examples` folder.
 
