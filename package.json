@@ -1,0 +1,13 @@
+{
+  "name": "popia-securecheck",
+  "private": true,
+  "type": "module",
+  "description": "In-browser POPIA security self-audit for South African small businesses.",
+  "scripts": {
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}
