@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   test:
-    name: Scoring tests
+    name: Scoring and domain-check tests
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -21,4 +21,6 @@ jobs:
           node-version: 22
 
       - name: Run tests
-        run: node --test
+        run: |
+          node --test
+          python3 -m unittest discover -s test -p 'test_*.py'

@@ -52,14 +52,21 @@ describe("site stays local", () => {
 });
 
 describe("required copy", () => {
-  it("shows the disclaimer, the authorisation gate, and the PR #2 placeholder", () => {
+  it("shows the disclaimer, the authorisation gate, and the report loader", () => {
     const html = read("site/index.html");
+    const app = read("site/js/app.js");
     assert.match(html, /Not legal advice and not a POPIA compliance certification/);
     assert.match(html, /authorised me to assess its systems and domain names/);
-    assert.match(html, /Domain checks coming in PR #2/);
+    assert.match(html, /does not prove ownership/);
+    assert.match(html, /--confirm-authorised/);
+    assert.doesNotMatch(html, /Domain checks coming in PR #2/);
+    assert.match(html, /id="report-file"/);
+    assert.match(html, /id="report-paste"/);
+    assert.match(html, /id="show-report"/);
     assert.match(html, /Clear saved answers/);
     assert.match(html, /Remember my answers on this device/);
     assert.match(html, /id="authorisation"/);
+    assert.match(app, /reportForDisplay\(/);
   });
 
   it("documents local use, Pages, the roadmap, and the MIT licence", () => {

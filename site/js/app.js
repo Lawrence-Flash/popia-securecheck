@@ -2,10 +2,13 @@
  * POPIA SecureCheck browser UI.
  * Scoring stays in score.js. This file renders the form, stores answers
  * in localStorage only when the visitor asks it to, and builds the download.
- * PR #1 makes no network requests. Domain checks are a locked placeholder.
+ * Domain checks are a JSON report produced on the visitor's computer.
+ * This page does not contact the domain.
  */
 
+import { clearDomainReport, renderDomainReport } from "./domain-view.js";
 import { CONDITIONS, QUESTIONS } from "./questions.js";
+import { domainReportMarkdown, parseDomainReport, reportForDisplay } from "./report.js";
 import { scoreAudit, toMarkdown } from "./score.js";
 
 const STORAGE_KEY = "popia-securecheck.v1";
@@ -20,6 +23,13 @@ const businessNameInput = document.querySelector("#business-name");
 const rememberInput = document.querySelector("#remember");
 const authorisationInput = document.querySelector("#authorisation");
 const gateCard = document.querySelector("#gate-card");
+const domainOpen = document.querySelector("#domain-open");
+const reportFile = document.querySelector("#report-file");
+const reportPaste = document.querySelector("#report-paste");
+const reportStatus = document.querySelector("#report-status");
+const domainResults = document.querySelector("#domain-results");
+const showReportButton = document.querySelector("#show-report");
+const clearReportButton = document.querySelector("#clear-report");
 const saveStatus = document.querySelector("#save-status");
 const exportButton = document.querySelector("#export-markdown");
 const printButton = document.querySelector("#print-results");
@@ -27,6 +37,7 @@ const clearButton = document.querySelector("#clear-data");
 
 let remember = true;
 let announced = false;
+let loadedReport = null;
 
 function el(tag, attrs = {}, children = []) {
   const node = document.createElement(tag);
@@ -126,7 +137,56 @@ function syncChoiceStyles() {
 }
 
 function syncGate() {
-  gateCard.classList.toggle("is-open", authorisationInput.checked);
+  const open = authorisationInput.checked === true;
+  gateCard.classList.toggle("is-open", open);
+  if (domainOpen) domainOpen.inert = !open;
+  if (!open) {
+    loadedReport = null;
+    clearDomainReport(domainResults);
+    if (reportStatus) reportStatus.textContent = "";
+  }
+}
+
+function readChosenReport() {
+  const file = reportFile && reportFile.files && reportFile.files[0];
+  if (file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ""));
+      reader.onerror = () => reject(new Error("read failed"));
+      reader.readAsText(file);
+    });
+  }
+  return Promise.resolve(reportPaste ? reportPaste.value : "");
+}
+
+function showReport() {
+  readChosenReport()
+    .then((text) => {
+      const gated = reportForDisplay(authorisationInput.checked === true, parseDomainReport(text));
+      if (!gated.ok) {
+        loadedReport = null;
+        clearDomainReport(domainResults);
+        reportStatus.textContent = gated.error;
+        return;
+      }
+      loadedReport = gated.report;
+      renderDomainReport(domainResults, gated.report);
+      reportStatus.textContent = `Showing the read-only report for ${gated.report.domain}. This page did not contact that domain.`;
+    })
+    .catch(() => {
+      loadedReport = null;
+      clearDomainReport(domainResults);
+      reportStatus.textContent = "Could not read that file.";
+    });
+}
+
+function clearReport() {
+  loadedReport = null;
+  if (reportPaste) reportPaste.value = "";
+  if (reportFile) reportFile.value = "";
+  clearDomainReport(domainResults);
+  if (reportStatus) reportStatus.textContent = "Domain report cleared from this page. Nothing was sent to a server.";
 }
 
 function answerLabel(answer) {
@@ -387,11 +447,14 @@ function bindActions() {
     syncGate();
     persist();
   });
+  showReportButton.addEventListener("click", showReport);
+  clearReportButton.addEventListener("click", clearReport);
   exportButton.addEventListener("click", () => {
-    const markdown = toMarkdown(currentResult(), {
+    let markdown = toMarkdown(currentResult(), {
       businessName: businessNameInput.value,
       generatedAt: generatedAt(),
     });
+    if (loadedReport) markdown += `\n${domainReportMarkdown(loadedReport)}`;
     const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = el("a", { href: url, download: "popia-securecheck-results.md" });
@@ -412,9 +475,10 @@ function bindActions() {
     } catch {
       stored = null;
     }
-    if (hasAnswers || authorisationInput.checked || stored) {
+    const reportVisible = Boolean(loadedReport) || (reportPaste && reportPaste.value.trim() !== "");
+    if (hasAnswers || authorisationInput.checked || stored || reportVisible) {
       const confirmed = window.confirm(
-        "Clear the business name, answers, and authorisation tick stored in this browser?",
+        "Clear the business name, answers, authorisation tick, and any domain report shown in this browser?",
       );
       if (!confirmed) return;
     }
@@ -428,6 +492,7 @@ function bindActions() {
     businessNameInput.value = "";
     authorisationInput.checked = false;
     for (const input of document.querySelectorAll('#audit-form input[type="radio"]')) input.checked = false;
+    clearReport();
     syncChoiceStyles();
     syncGate();
     announced = true;
