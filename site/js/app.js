@@ -45,14 +45,12 @@ function el(tag, attrs = {}, children = []) {
 }
 
 function appendTextWithLinks(parent, text) {
-  const pattern = /https:\/\/[^\s),.;]+/g;
+  const pattern = /https:\/\/[^\s)]+/g;
   let last = 0;
   for (const match of text.matchAll(pattern)) {
+    const href = match[0].replace(/[.,;:]+$/, "");
     if (match.index > last) parent.append(text.slice(last, match.index));
-    const href = match[0];
-    parent.append(
-      el("a", { href, rel: "noopener noreferrer" }, [href]),
-    );
+    parent.append(el("a", { href, rel: "noopener noreferrer" }, [href]));
     last = match.index + href.length;
   }
   if (last < text.length) parent.append(text.slice(last));
@@ -245,7 +243,7 @@ function renderResults() {
       el("p", { class: "act-ref" }, [condition.actRef]),
     );
     if (condition.percent === null) {
-      head.append(el("p", { class: "condition-percent" }, ["Not started"]));
+      head.append(el("p", { class: "condition-percent is-empty" }, ["Not started"]));
       item.append(head);
       item.append(el("p", { class: "score-note" }, [`0 of ${condition.total} answered.`]));
     } else {

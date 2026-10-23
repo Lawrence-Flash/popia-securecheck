@@ -288,10 +288,10 @@ input[type="text"] {
 .kicker {
   margin: 0.15rem 0 0;
   color: var(--green-ink);
-  font-size: 0.82rem;
+  font-size: 0.85rem;
   font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-variant-caps: all-small-caps;
 }
 
 .condition-summary,
@@ -496,6 +496,14 @@ button {
   margin: 0;
   font-family: var(--serif);
   font-size: 1.6rem;
+}
+
+.condition-percent.is-empty {
+  align-self: center;
+  font-family: var(--sans);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--muted);
 }
 
 .meter {
