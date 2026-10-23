@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en-ZA">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="A free in-browser POPIA security self-audit for South African small businesses. Not legal advice and not a compliance certificate.">
+    <meta name="color-scheme" content="light dark">
+    <title>POPIA SecureCheck</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="css/styles.css">
+  </head>
+  <body>
+    <a class="skip" href="#questionnaire">Skip to the questionnaire</a>
+    <header class="masthead">
+      <div class="wrap">
+        <p class="eyebrow">
+          <svg class="mark" viewBox="0 0 32 32" aria-hidden="true">
+            <rect width="32" height="32" rx="8" fill="#1f6b4a"></rect>
+            <path d="M9 10h14M9 16h10M9 22h8" fill="none" stroke="#f3efe6" stroke-width="2" stroke-linecap="round"></path>
+          </svg>
+          Free self-audit for South African small businesses
+        </p>
+        <h1>POPIA SecureCheck</h1>
+        <p class="lede">A plain-language check of how your business looks after personal information. The questions follow the eight conditions for lawful processing in the Protection of Personal Information Act 4 of 2013, with extra weight on security safeguards (section 19) and breach notification (section 22).</p>
+        <nav aria-label="On this page">
+          <a href="#questionnaire">Questionnaire</a>
+          <a href="#results">Results</a>
+          <a href="#domain-checks">Domain checks</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <section class="disclaimer" role="note" aria-label="Disclaimer">
+        <p><strong>Not legal advice and not a POPIA compliance certification.</strong> SecureCheck helps a small business see gaps in its own answers. It does not measure every duty in the Act, it does not know facts you do not tell it, and a high score does not mean the Information Regulator would agree. For official guidance, use the <a href="https://inforegulator.org.za/">Information Regulator</a> or a qualified professional. The Act is the Protection of Personal Information Act 4 of 2013.</p>
+      </section>
+
+      <section class="how" aria-labelledby="how-title">
+        <h2 id="how-title">How to use it</h2>
+        <ol>
+          <li>Answer yes, partly, or no. Partly means you have started, but the practice is incomplete or not consistent. Partly scores half the question's weight.</li>
+          <li>The score is calculated in this browser. Nothing is uploaded. Leave "Remember my answers on this device" ticked only if you want them kept in local storage.</li>
+          <li>Download a Markdown file or print the results, then work through the fixes. Clear the saved answers when you are done on a shared computer.</li>
+        </ol>
+      </section>
+
+      <section id="questionnaire" aria-labelledby="questionnaire-title">
+        <div class="section-head">
+          <h2 id="questionnaire-title">Questionnaire</h2>
+          <p>Twenty-seven questions. Security safeguards are marked and weighted more heavily. Open "Why this is asked" when you want the section it maps to.</p>
+        </div>
+        <div class="identity">
+          <div class="field">
+            <label for="business-name">Business name <span class="optional">(optional, for your export)</span></label>
+            <input id="business-name" name="business-name" type="text" maxlength="120" autocomplete="organization" spellcheck="false">
+          </div>
+          <label class="remember" for="remember">
+            <input id="remember" type="checkbox" checked>
+            <span>Remember my answers on this device</span>
+          </label>
+        </div>
+        <div class="progress-wrap">
+          <div id="progressbar" role="progressbar" aria-valuemin="0" aria-valuemax="27" aria-valuenow="0" aria-labelledby="progress-label">
+            <span id="progress-fill"></span>
+          </div>
+          <p id="progress-label">0 answered</p>
+        </div>
+        <div id="audit-root"></div>
+        <noscript>
+          <p>SecureCheck scores answers in your browser and needs JavaScript for that. It does not send them to a server. The questions are in <code>site/js/questions.js</code> if you are reading the project source.</p>
+        </noscript>
+      </section>
+
+      <section id="results" aria-labelledby="results-title">
+        <div class="section-head">
+          <h2 id="results-title">Results</h2>
+          <p>The overall score uses each question's weight. It is not an average of the eight condition scores, so security gaps move it more.</p>
+        </div>
+        <p id="score-live" class="visually-hidden" aria-live="polite"></p>
+        <div id="results-root"></div>
+        <div class="actions no-print">
+          <button type="button" id="export-markdown">Download Markdown</button>
+          <button type="button" id="print-results">Print results</button>
+          <button type="button" id="clear-data" class="button-quiet">Clear saved answers</button>
+        </div>
+        <p id="save-status" class="save-status" role="status"></p>
+      </section>
+
+      <section id="domain-checks" aria-labelledby="domain-title">
+        <div class="section-head">
+          <h2 id="domain-title">Domain checks</h2>
+          <p>Later versions will run read-only checks only after this confirmation. This version does not look up a domain or open a connection.</p>
+        </div>
+        <div class="gate-card" id="gate-card">
+          <div class="gate-label">
+            <input id="authorisation" class="gate-input" type="checkbox" aria-controls="domain-open" aria-describedby="authorisation-note">
+            <label for="authorisation">I confirm that I own this business, or that the owner has authorised me to assess its systems and domain names. I will only use domain checks for names I am allowed to test. I understand that ticking this box does not prove ownership, and that this version of SecureCheck does not contact any website or server.</label>
+          </div>
+          <p id="authorisation-note" class="domain-locked">Tick the confirmation to open the domain-check area. Nothing is sent over the network.</p>
+          <div id="domain-open" class="domain-open">
+            <h3>Domain checks coming in PR #2</h3>
+            <p>Planned read-only checks: HTTPS and TLS, security headers, SPF, DKIM and DMARC, a hint if a common admin address is exposed, and whether a privacy policy appears to be present. Nothing in this version contacts a domain or a server.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="wrap">
+      <p><strong>Responsible use.</strong> Use SecureCheck only for a business you own or are authorised to assess. Do not use the domain-check gate as a cover for testing someone else's systems. An exported results file can describe real weaknesses. Keep it private.</p>
+      <p>POPIA SecureCheck is free software under the MIT licence. It stores nothing on a server. Questions cite sections of Act 4 of 2013 only for the duty they describe.</p>
+      <p>
+        <a href="https://inforegulator.org.za/">Information Regulator</a>
+        ·
+        <a href="https://www.saflii.org/za/legis/consol_act/popia4o2013399/">Act 4 of 2013 (consolidated text, SAFLII)</a>
+      </p>
+    </footer>
+    <script type="module" src="js/app.js"></script>
+  </body>
+</html>
